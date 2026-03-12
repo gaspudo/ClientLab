@@ -7,11 +7,11 @@ namespace classes
 {
     public class Pessoa_Juridica : Cliente
     {
-        public long CNPJ {get; set;}
-        public long IE {get; set;}
-        protected override double porcentagem_imposto => 0.20;
+        public string CNPJ {get; set;}
+        public string IE {get; set;}
+        public override decimal Porcentagem_imposto => 0.20m;
 
-        public Pessoa_Juridica (long cnpj, long ie) {
+        public Pessoa_Juridica (string cnpj, string ie, string nome, string endereco) : base(nome, endereco) {
             CNPJ = cnpj;
             IE = ie;
         }

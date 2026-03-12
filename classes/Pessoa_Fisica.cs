@@ -7,11 +7,11 @@ namespace classes
 {
     public class Pessoa_Fisica : Cliente
     {
-        public long CPF {get; set;}
-        public long RG {get;set;}
-        protected override double porcentagem_imposto => 0.10;
+        public string CPF {get; set;}
+        public string RG {get;set;}
+        public override decimal Porcentagem_imposto => 0.10m;
 
-        public Pessoa_Fisica (long cpf, long rg) {
+        public Pessoa_Fisica (string cpf, string rg, string nome, string endereco) : base(nome, endereco) {
             CPF = cpf;
             RG = rg;
         }

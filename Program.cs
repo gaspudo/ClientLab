@@ -1,2 +1,12 @@
-﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+﻿using ClientLab;
+using DotNetEnv;
+
+namespace ClientLab;    
+class Program
+    {
+        static void Main(string[] args)
+        {
+            Env.Load();
+            
+        }
+    }

@@ -10,24 +10,21 @@ namespace classes
         public int Id {get; set;}
         public string Nome {get;set;}
         public string Endereco {get;set;}
-        public decimal valor_compra {get; set;}
-        public decimal valor_imposto {get;set;}
-        public decimal valor_total {get; set;}
-        public double porcentagem_imposto;
+        public decimal Valor_compra {get; set;}
+        public decimal Valor_imposto {get;set;}
+        public decimal Valor_total {get; set;}
+        public virtual decimal Porcentagem_imposto{get; set;}
 
         public Cliente (string nome, string endereco) {
                 Nome = nome;
                 Endereco = endereco;
         }
 
-        public void Pagar_imposto (float valor) 
+        public void Pagar_imposto (decimal valor) 
         {
-            valor_compra = valor;
-            valor_imposto = porcentagem_imposto * valor_compra;
-            valor_total = valor_compra + valor_imposto;
+            Valor_compra = valor;
+            Valor_imposto = Porcentagem_imposto * Valor_compra;
+            Valor_total = Valor_compra + Valor_imposto;
         }
-
-
-
     }
 }

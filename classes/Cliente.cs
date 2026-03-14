@@ -13,7 +13,7 @@ namespace classes
         public decimal Valor_compra {get; set;}
         public decimal Valor_imposto {get;set;}
         public decimal Valor_total {get; set;}
-        public virtual decimal Porcentagem_imposto{get; set;}
+        public virtual decimal Porcentagem_imposto {get; set;}
 
         public Cliente (string nome, string endereco) {
                 Nome = nome;

@@ -7,6 +7,7 @@ using System.IO;
 using MySql.Data.MySqlClient;
 using System.Globalization;
 using classes;
+using Microsoft.VisualBasic;
 
 namespace ClientLab
 {
@@ -58,6 +59,44 @@ namespace ClientLab
                         conexao.Open();
                         comando.ExecuteNonQuery();
                         Console.WriteLine($"Pessoa jurídica: '{pessoa_Juridica.Nome}' \nCadastrado(a) com sucesso.");
+                    } catch (MySqlException ex)
+                    {
+                        Console.WriteLine($"ERRO: {ex}");
+                    }
+                }
+            }
+        }
+
+        public void RegistrarVendaPf (Pessoa_Fisica cliente)
+        {
+            DateTime data = DateTime.UtcNow;
+            using (var conexao = _conexaoBanco.ObterConexao())
+            {
+                string query = "INSERT INTO tb_vendas (data_hora_venda, vl_compra, vl_imposto, vl_total, fk_cliente_pf) VALUES (@data, @vl_compra, @vl_imposto, @vl_total, @fk_pf); SELECT LAST_INSERT_ID();";
+                using (var comando = new MySqlCommand(query, conexao))
+                {
+                    cliente.Id = Convert.ToInt32(comando.ExecuteScalar());
+                    comando.Parameters.AddWithValue("@data", data);
+                    comando.Parameters.AddWithValue("@vl_compra", cliente.Valor_compra);
+                    comando.Parameters.AddWithValue("@vl_imposto", cliente.Valor_imposto);
+                    comando.Parameters.AddWithValue("@vl_total", cliente.Valor_total);
+                    comando.Parameters.AddWithValue("@fk_pf", cliente.Id);
+                    try
+                    {
+                        conexao.Open();
+                        comando.ExecuteNonQuery();
+                        
+                        Console.WriteLine("Processando cálculos...");
+                        Console.WriteLine("------ RECIBO: Pessoa Física ------");
+                        Console.WriteLine($"\nCliente.....: {cliente.Nome}");
+                        Console.WriteLine($"Data/Hora....: {data}");
+                        Console.WriteLine($"Endereço: {cliente.Endereco}");
+                        Console.WriteLine($"CPF: {cliente.CPF}");
+                        Console.WriteLine($"RG: {cliente.RG}");
+                        Console.WriteLine("------------------------------");
+                        Console.WriteLine($"Valor da compra: R${cliente.Valor_compra:c}");
+                        Console.WriteLine($"Imposto (10%): R${cliente.Valor_imposto:c}");
+                        Console.WriteLine($"Total: R${cliente.Valor_total:c}");
                     } catch (MySqlException ex)
                     {
                         Console.WriteLine($"ERRO: {ex}");

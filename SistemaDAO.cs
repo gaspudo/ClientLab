@@ -72,7 +72,7 @@ namespace ClientLab
             DateTime data = DateTime.UtcNow;
             using (var conexao = _conexaoBanco.ObterConexao())
             {
-                string query = "INSERT INTO tb_vendas (data_hora_venda, vl_compra, vl_imposto, vl_total, fk_cliente_pf) VALUES (@data, @vl_compra, @vl_imposto, @vl_total, @fk_pf); SELECT LAST_INSERT_ID();";
+                string query = "INSERT INTO tb_vendas (data_hora_venda, vl_compra, vl_imposto, vl_total, fk_cliente_pf, tipo) VALUES (@data, @vl_compra, @vl_imposto, @vl_total, @fk_pf, @tipo); SELECT LAST_INSERT_ID();";
                 using (var comando = new MySqlCommand(query, conexao))
                 {
                     cliente.Id = Convert.ToInt32(comando.ExecuteScalar());
@@ -81,6 +81,7 @@ namespace ClientLab
                     comando.Parameters.AddWithValue("@vl_imposto", cliente.Valor_imposto);
                     comando.Parameters.AddWithValue("@vl_total", cliente.Valor_total);
                     comando.Parameters.AddWithValue("@fk_pf", cliente.Id);
+                    comando.Parameters.AddWithValue("tipo", "PF");
                     try
                     {
                         conexao.Open();
@@ -105,6 +106,106 @@ namespace ClientLab
             }
         }
 
-        
+        public void RegistrarVendaPj (Pessoa_Juridica cliente)
+        {
+            DateTime data = DateTime.UtcNow;
+            using (var conexao = _conexaoBanco.ObterConexao())
+            {
+                string query = "INSERT INTO tb_vendas (data_hora_venda, vl_compra, vl_imposto, vl_total, fk_cliente_pj, tipo) VALUES (@data, @vl_compra, @vl_imposto, @vl_total, @fk_pj, @tipo); SELECT LAST_INSERT_ID();";
+                using (var comando = new MySqlCommand(query, conexao))
+                {
+                    cliente.Id = Convert.ToInt32(comando.ExecuteScalar());
+                    comando.Parameters.AddWithValue("@data", data);
+                    comando.Parameters.AddWithValue("@vl_compra", cliente.Valor_compra);
+                    comando.Parameters.AddWithValue("@vl_imposto", cliente.Valor_imposto);
+                    comando.Parameters.AddWithValue("@vl_total", cliente.Valor_total);
+                    comando.Parameters.AddWithValue("@fk_pj", cliente.Id);
+                    comando.Parameters.AddWithValue("@tipo", "PJ");
+                    try
+                    {
+                        conexao.Open();
+                        comando.ExecuteNonQuery();
+                        
+                        Console.WriteLine("Processando cálculos...");
+                        Console.WriteLine("------ RECIBO: Pessoa Jurídica ------");
+                        Console.WriteLine($"\nCliente....: {cliente.Nome}");
+                        Console.WriteLine($"Data/Hora....: {data}");
+                        Console.WriteLine($"Endereço.....: {cliente.Endereco}");
+                        Console.WriteLine($"CNPJ.........: {cliente.CNPJ}");
+                        Console.WriteLine($"IE...........: {cliente.IE}");
+                        Console.WriteLine("------------------------------");
+                        Console.WriteLine($"Valor da compra: R${cliente.Valor_compra:c}");
+                        Console.WriteLine($"Imposto (10%): R${cliente.Valor_imposto:c}");
+                        Console.WriteLine($"Total: R${cliente.Valor_total:c}");
+                    } catch (MySqlException ex)
+                    {
+                        Console.WriteLine($"ERRO: {ex}");
+                    }
+                }
+            }
+        }
+
+        public void MostrarVendas()
+        {
+            using (var conexao = _conexaoBanco.ObterConexao())
+            {
+                string query = "SELECT id_venda, nm_cliente, data_hora_venda, vl_compra, vl_imposto, vl_total FROM tb_vendas ";
+                using (var comando = new MySqlCommand(query, conexao) )
+                {
+                    conexao.Open();
+                    using (var reader = comando.ExecuteReader())
+                    {
+                        Console.WriteLine("--- VENDAS ---");
+                        Console.WriteLine($"{"ID",-4} | {"NOME",-20} | {"DATA",-20} | {"TIPO", -4} | {"VALOR",-12} | {"IMPOSTO",-10} | {"TOTAL"}");
+
+                        while (reader.Read())
+                        {
+                            Console.WriteLine($"{reader["id_venda"],-4} | {reader["nm_cliente"],-20} | {reader["data_hora_venda"],-20} | {reader["tipo"],-4} | {reader["vl_compra"],-12:C} | {reader["vl_imposto"],-10:C} | {reader["vl_total"]:C}");
+                        }
+                    }
+                }
+            }
+        }
+
+        public void GerarRelatorioCSV()
+        {
+            string caminhoArquivo = "RelatorioGeral.csv";
+            
+            string conteudoCSV = "ID Venda;Data;Cliente;Subtotal;Imposto;Total da Venda\n";
+
+            // Inicia a conexão
+            using (var conexao = _conexaoBanco.ObterConexao())
+            {
+
+                string query = @"
+                    SELECT 
+                        v.id_venda, 
+                        v.data_hora_venda, 
+                        v.tipo,
+                        COALESCE(pf.nm_cliente, pj.nm_cliente) AS nm_cliente,
+                        v.vl_compra, 
+                        v.vl_imposto, 
+                        v.vl_total
+                    FROM tb_vendas v
+                    LEFT JOIN tb_cliente_pf pf ON v.fk_cliente_pf = pf.id_cliente
+                    LEFT JOIN tb_cliente_pj pj ON v.fk_cliente_pj = pj.id_cliente
+                    ORDER BY v.id_venda ASC";
+                using (var comando = new MySqlCommand(query, conexao))
+                {
+                    conexao.Open();
+                    
+                    using (var reader = comando.ExecuteReader())
+                    {
+
+                        while (reader.Read())
+                        {
+                            conteudoCSV += $"{reader["id_venda"]};{reader["data_hora_venda"]};{reader["nm_cliente"]};{reader["vl_compra"]};{reader["vl_imposto"]};{reader["vl_total"]}\n";
+                        }
+                    }
+                }
+            }
+            File.WriteAllText(caminhoArquivo, conteudoCSV);
+            Console.WriteLine($"\nRelatório gerado com sucesso em: {Path.GetFullPath(caminhoArquivo)}");
+        }
     }
 }

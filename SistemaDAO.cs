@@ -207,11 +207,11 @@ namespace ClientLab
                     using (var reader = comando.ExecuteReader())
                     {
                         Console.WriteLine("--- VENDAS ---");
-                        Console.WriteLine($"{"ID",-4} | {"NOME",-20} | {"DATA",-20} | {"TIPO", -4} | {"VALOR",-12} | {"IMPOSTO",-10} | {"TOTAL"}");
+                        Console.WriteLine($"{"ID",-4} | {"NOME",-40} | {"DATA",-20} | {"TIPO", -4} | {"VALOR",-12} | {"IMPOSTO",-10} | {"TOTAL"}");
 
                         while (reader.Read())
                         {
-                            Console.WriteLine($"{reader["id_venda"],-4} | {reader["nm_cliente"],-20} | {reader["data_hora_venda"],-20} | {reader["tipo"],-4} | {reader["vl_compra"],-12:C} | {reader["vl_imposto"],-10:C} | {reader["vl_total"]:C}");
+                            Console.WriteLine($"{reader["id_venda"],-4} | {reader["nm_cliente"],-40} | {reader["data_hora_venda"],-20} | {reader["tipo"],-4} | {reader["vl_compra"],-12:C} | {reader["vl_imposto"],-10:C} | {reader["vl_total"]:C}");
                         }
                     }
                 }

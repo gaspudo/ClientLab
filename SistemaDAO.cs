@@ -24,7 +24,7 @@ namespace ClientLab
         {
             using (var conexao = _conexaoBanco.ObterConexao())
             {
-                string query = "INSERT INTO tb_cliente_pf (nm_cliente, ed_cliente, cpf_cliente, rg_cliente) VALUES (@nome, @endereco, @cpf, @rg)";
+                string query = "INSERT INTO tb_cliente_pf (nm_cliente, ed_cliente, cpf_cliente, rg_cliente) VALUES (@nome, @endereco, @cpf, @rg);  SELECT LAST_INSERT_ID();";
                 using (var comando = new MySqlCommand(query, conexao))
                 {
                     comando.Parameters.AddWithValue("@nome", pessoa_Fisica.Nome);
@@ -33,11 +33,11 @@ namespace ClientLab
                     comando.Parameters.AddWithValue("rg", pessoa_Fisica.RG);
                     try {
                         conexao.Open();
-                        comando.ExecuteNonQuery();
+                        pessoa_Fisica.Id = Convert.ToInt32(comando.ExecuteScalar());
                         Console.WriteLine($"Pessoa física: '{pessoa_Fisica.Nome}' \nCadastrado(a) com sucesso.");
                     } catch (MySqlException ex)
                     {
-                        Console.WriteLine($"ERRO: {ex}");
+                        Console.WriteLine($"ERRO: {ex.Message}");
                     }
                 }
             }
@@ -47,9 +47,10 @@ namespace ClientLab
         {
             using (var conexao = _conexaoBanco.ObterConexao())
             {
-                string query = "INSERT INTO tb_cliente_pj (nm_cliente, ed_cliente, cnpj_cliente, ie_cliente) VALUES (@nome, @endereco, @cnpj, @ie)";
+                string query = "INSERT INTO tb_cliente_pj (nm_cliente, ed_cliente, cnpj_cliente, ie_cliente) VALUES (@nome, @endereco, @cnpj, @ie); SELECT LAST_INSERT_ID();";
                 using (var comando = new MySqlCommand(query, conexao))
                 {
+                    
                     comando.Parameters.AddWithValue("@nome", pessoa_Juridica.Nome);
                     comando.Parameters.AddWithValue("@endereco", pessoa_Juridica.Endereco);
                     comando.Parameters.AddWithValue("@cnpj", pessoa_Juridica.CNPJ);
@@ -57,50 +58,101 @@ namespace ClientLab
                     try
                     {
                         conexao.Open();
-                        comando.ExecuteNonQuery();
+                        pessoa_Juridica.Id = Convert.ToInt32(comando.ExecuteScalar());
                         Console.WriteLine($"Pessoa jurídica: '{pessoa_Juridica.Nome}' \nCadastrado(a) com sucesso.");
                     } catch (MySqlException ex)
                     {
-                        Console.WriteLine($"ERRO: {ex}");
+                        Console.WriteLine($"ERRO: {ex.Message}");
                     }
                 }
             }
         }
+
+        public Pessoa_Fisica BuscarClientePf(int id)
+            {
+                using (var conexao = _conexaoBanco.ObterConexao())
+                {
+                    string query = "SELECT * FROM tb_cliente_pf WHERE id_cliente = @id";
+                    MySqlCommand cmd = new MySqlCommand(query, conexao);
+                    cmd.Parameters.AddWithValue("@id", id);
+                    
+                    conexao.Open();
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new Pessoa_Fisica(
+                                reader["nm_cliente"].ToString()!,
+                                reader["ed_cliente"].ToString()!,
+                                reader["cpf_cliente"].ToString()!,
+                                reader["rg_cliente"].ToString()!
+                            ) { Id = Convert.ToInt32(reader["id_cliente"]) };
+                        }
+                    }
+                }
+                return null!;
+            }
+
+            public Pessoa_Juridica BuscarClientePj(int id)
+            {
+                using (var conexao = _conexaoBanco.ObterConexao())
+                {
+                    string query = "SELECT * FROM tb_cliente_pj WHERE id_cliente = @id";
+                    MySqlCommand cmd = new MySqlCommand(query, conexao);
+                    cmd.Parameters.AddWithValue("@id", id);
+                    
+                    conexao.Open();
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new Pessoa_Juridica (
+                                reader["nm_cliente"].ToString()!,
+                                reader["ed_cliente"].ToString()!,
+                                reader["cnpj_cliente"].ToString()!,
+                                reader["ie_cliente"].ToString()!
+                            ) { Id = Convert.ToInt32(reader["id_cliente"]) };
+                        }
+                    }
+                }
+                return null!;
+            }
 
         public void RegistrarVendaPf (Pessoa_Fisica cliente)
         {
             DateTime data = DateTime.UtcNow;
             using (var conexao = _conexaoBanco.ObterConexao())
             {
-                string query = "INSERT INTO tb_vendas (data_hora_venda, vl_compra, vl_imposto, vl_total, fk_cliente_pf, tipo) VALUES (@data, @vl_compra, @vl_imposto, @vl_total, @fk_pf, @tipo); SELECT LAST_INSERT_ID();";
+                string query = "INSERT INTO tb_vendas (data_hora_venda, nm_cliente, vl_compra, vl_imposto, vl_total, fk_cliente_pf, tipo) VALUES (@data, @nm_cliente, @vl_compra, @vl_imposto, @vl_total, @fk_pf, @tipo)";
                 using (var comando = new MySqlCommand(query, conexao))
                 {
-                    cliente.Id = Convert.ToInt32(comando.ExecuteScalar());
                     comando.Parameters.AddWithValue("@data", data);
+                    comando.Parameters.AddWithValue("@nm_cliente", cliente.Nome);
                     comando.Parameters.AddWithValue("@vl_compra", cliente.Valor_compra);
                     comando.Parameters.AddWithValue("@vl_imposto", cliente.Valor_imposto);
                     comando.Parameters.AddWithValue("@vl_total", cliente.Valor_total);
                     comando.Parameters.AddWithValue("@fk_pf", cliente.Id);
                     comando.Parameters.AddWithValue("tipo", "PF");
+                    Console.WriteLine("Processando cálculos...");
+                    Console.WriteLine("------ RECIBO: Pessoa Física ------");
+                    Console.WriteLine($"\nCliente.....: {cliente.Nome}");
+                    Console.WriteLine($"Data/Hora....: {data}");
+                    Console.WriteLine($"Endereço: {cliente.Endereco}");
+                    Console.WriteLine($"CPF: {cliente.CPF}");
+                    Console.WriteLine($"RG: {cliente.RG}");
+                    Console.WriteLine("------------------------------");
+                    Console.WriteLine($"Valor da compra: R${cliente.Valor_compra:c}");
+                    Console.WriteLine($"Imposto (10%): R${cliente.Valor_imposto:c}");
+                    Console.WriteLine($"Total: R${cliente.Valor_total:c}");
                     try
                     {
                         conexao.Open();
                         comando.ExecuteNonQuery();
                         
-                        Console.WriteLine("Processando cálculos...");
-                        Console.WriteLine("------ RECIBO: Pessoa Física ------");
-                        Console.WriteLine($"\nCliente.....: {cliente.Nome}");
-                        Console.WriteLine($"Data/Hora....: {data}");
-                        Console.WriteLine($"Endereço: {cliente.Endereco}");
-                        Console.WriteLine($"CPF: {cliente.CPF}");
-                        Console.WriteLine($"RG: {cliente.RG}");
-                        Console.WriteLine("------------------------------");
-                        Console.WriteLine($"Valor da compra: R${cliente.Valor_compra:c}");
-                        Console.WriteLine($"Imposto (10%): R${cliente.Valor_imposto:c}");
-                        Console.WriteLine($"Total: R${cliente.Valor_total:c}");
+                        
                     } catch (MySqlException ex)
                     {
-                        Console.WriteLine($"ERRO: {ex}");
+                        Console.WriteLine($"ERRO: {ex.Message}");
                     }
                 }
             }
@@ -111,35 +163,34 @@ namespace ClientLab
             DateTime data = DateTime.UtcNow;
             using (var conexao = _conexaoBanco.ObterConexao())
             {
-                string query = "INSERT INTO tb_vendas (data_hora_venda, vl_compra, vl_imposto, vl_total, fk_cliente_pj, tipo) VALUES (@data, @vl_compra, @vl_imposto, @vl_total, @fk_pj, @tipo); SELECT LAST_INSERT_ID();";
+                string query = "INSERT INTO tb_vendas (data_hora_venda, nm_cliente, vl_compra, vl_imposto, vl_total, fk_cliente_pj, tipo) VALUES (@data, @nm_cliente, @vl_compra, @vl_imposto, @vl_total, @fk_pj, @tipo)";
                 using (var comando = new MySqlCommand(query, conexao))
                 {
-                    cliente.Id = Convert.ToInt32(comando.ExecuteScalar());
                     comando.Parameters.AddWithValue("@data", data);
+                    comando.Parameters.AddWithValue("@nm_cliente", cliente.Nome);
                     comando.Parameters.AddWithValue("@vl_compra", cliente.Valor_compra);
                     comando.Parameters.AddWithValue("@vl_imposto", cliente.Valor_imposto);
                     comando.Parameters.AddWithValue("@vl_total", cliente.Valor_total);
                     comando.Parameters.AddWithValue("@fk_pj", cliente.Id);
                     comando.Parameters.AddWithValue("@tipo", "PJ");
+                    Console.WriteLine("Processando cálculos...");
+                    Console.WriteLine("------ RECIBO: Pessoa Jurídica ------");
+                    Console.WriteLine($"\nCliente....: {cliente.Nome}");
+                    Console.WriteLine($"Data/Hora....: {data}");
+                    Console.WriteLine($"Endereço.....: {cliente.Endereco}");
+                    Console.WriteLine($"CNPJ.........: {cliente.CNPJ}");
+                    Console.WriteLine($"IE...........: {cliente.IE}");
+                    Console.WriteLine("------------------------------");
+                    Console.WriteLine($"Valor da compra: R${cliente.Valor_compra:c}");
+                    Console.WriteLine($"Imposto (10%): R${cliente.Valor_imposto:c}");
+                    Console.WriteLine($"Total: R${cliente.Valor_total:c}");
                     try
                     {
                         conexao.Open();
                         comando.ExecuteNonQuery();
-                        
-                        Console.WriteLine("Processando cálculos...");
-                        Console.WriteLine("------ RECIBO: Pessoa Jurídica ------");
-                        Console.WriteLine($"\nCliente....: {cliente.Nome}");
-                        Console.WriteLine($"Data/Hora....: {data}");
-                        Console.WriteLine($"Endereço.....: {cliente.Endereco}");
-                        Console.WriteLine($"CNPJ.........: {cliente.CNPJ}");
-                        Console.WriteLine($"IE...........: {cliente.IE}");
-                        Console.WriteLine("------------------------------");
-                        Console.WriteLine($"Valor da compra: R${cliente.Valor_compra:c}");
-                        Console.WriteLine($"Imposto (10%): R${cliente.Valor_imposto:c}");
-                        Console.WriteLine($"Total: R${cliente.Valor_total:c}");
                     } catch (MySqlException ex)
                     {
-                        Console.WriteLine($"ERRO: {ex}");
+                        Console.WriteLine($"ERRO: {ex.Message}");
                     }
                 }
             }
@@ -149,7 +200,7 @@ namespace ClientLab
         {
             using (var conexao = _conexaoBanco.ObterConexao())
             {
-                string query = "SELECT id_venda, nm_cliente, data_hora_venda, vl_compra, vl_imposto, vl_total FROM tb_vendas ";
+                string query = "SELECT id_venda, nm_cliente, data_hora_venda, tipo, vl_compra, vl_imposto, vl_total FROM tb_vendas ";
                 using (var comando = new MySqlCommand(query, conexao) )
                 {
                     conexao.Open();

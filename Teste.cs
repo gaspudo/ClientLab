@@ -18,6 +18,7 @@ namespace ClientLab
             var cpf = "cpf";
             var rg = "rg";
             Pessoa_Fisica pf = new Pessoa_Fisica(nome, end, cpf, rg);
+            
 
             pf.Pagar_imposto(2500m);
             Assert.Equal(2750m, pf.Valor_total);

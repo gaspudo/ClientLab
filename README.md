@@ -22,7 +22,7 @@ Certifique-se de configurar a Connection String no arquivo appsettings.json ou s
 
 Bash
 # Clonar o repositório
-git clone https://github.com/gaspudo/nome-do-repo.git
+git clone https://github.com/gaspudo/ClientLab.git
 
 # Restaurar dependências
 dotnet restore

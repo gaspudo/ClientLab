@@ -22,69 +22,92 @@ while (isActive)
 
     string? opcao = Console.ReadLine();
 
-    switch (opcao)
-    {
-        case "1":
-            tipo_cliente:
-            Console.Write("Escolha o tipo de cliente (f/j): ");
-            string cliente = Console.ReadLine()!.Trim().ToLower();
-            string nome, end, cpf, rg, ie, cnpj;
-            switch (cliente)
+    try{
+        switch (opcao)
         {
-            case "f":
-                menu.DadosPf(out nome, out end, out cpf, out rg);
-                Pessoa_Fisica pf = new Pessoa_Fisica(nome, end, rg, cpf);
-                sistemaDAO.CadastrarClientePf(pf);
-                break;
+            case "1":
+                tipo_cliente:
+                Console.Write("Escolha o tipo de cliente (f/j): ");
+                string cliente = Console.ReadLine()!.Trim().ToLower();
+                string nome, end, cpf, rg, ie, cnpj;
+                char confirmacao;
+                switch (cliente)
+            {
+                case "f":
+                    menu.DadosPf(out nome, out end, out cpf, out rg);
+                    Pessoa_Fisica pf = new Pessoa_Fisica(nome, end, rg, cpf);
+                    Console.WriteLine($"Cliente {pf.Nome}\n CPF: {pf.CPF}\n RG: {pf.RG}\n Endereço: {pf.Endereco}\nDados estão corretos? (s/n)");
+                    confirmacao = Convert.ToChar(Console.ReadLine()?.ToLower() ?? string.Empty);
+                    if (confirmacao == 's')
+                        {
+                            sistemaDAO.CadastrarClientePf(pf);
+                        } else
+                        {
+                            Console.Clear();
+                            goto case "f";
+                        }
+                    break;
 
-            case "j":
-                menu.DadosPj(out nome , out end, out cnpj, out ie );
-                Pessoa_Juridica pj = new Pessoa_Juridica(nome, end, cnpj, ie);
-                sistemaDAO.CadastrarClientePj(pj);
+                case "j":
+                    menu.DadosPj(out nome , out end, out cnpj, out ie );
+                    Pessoa_Juridica pj = new Pessoa_Juridica(nome, end, cnpj, ie);
+                    Console.WriteLine( $"Cliente {pj.Nome}\n CPNJ: {pj.CNPJ}\n IE: {pj.IE}\n Endereço {pj.Endereco}\nDados estão corretos? (s/n)");
+                    confirmacao = Convert.ToChar(Console.ReadLine()?.ToLower() ?? string.Empty);
+                    if (confirmacao == 's'){
+                        sistemaDAO.CadastrarClientePj(pj);
+                    } else {
+                            Console.Clear();
+                            goto case "j";
+                        }
+                    break;
+                
+                default:
+                    Console.WriteLine("Tipo de cliente inválido. Tente novamente.");
+                    goto tipo_cliente;
+            }
+                break;
+            case "2":
+                Console.Write("Digite o tipo de Cliente para registrar a venda (f/j): ");
+                string tipoCliente = Console.ReadLine()!.Trim().ToLower();
+                Console.Write("Digite o ID: ");
+                int id = int.Parse(Console.ReadLine()!);
+                Console.WriteLine("Digite o valor da compra: ");
+                decimal valor_compra = Convert.ToDecimal(Console.ReadLine());
+                if (tipoCliente == "f")
+                {
+                    var clientePf = sistemaDAO.BuscarClientePf(id);
+                    clientePf.Pagar_imposto(valor_compra);
+                    sistemaDAO.RegistrarVendaPf(clientePf);
+                }
+                else if (tipoCliente == "j")
+                {
+                    var clientePj = sistemaDAO.BuscarClientePj(id);
+                    clientePj.Pagar_imposto(valor_compra);
+                    sistemaDAO.RegistrarVendaPj(clientePj);
+                }
+                else
+                {
+                    Console.WriteLine("Tipo de cliente inválido. Tente novamente.");
+                    goto case "2";
+                }
+                break;
+            case "3":
+                sistemaDAO.MostrarVendas();
+                break;
+            case "4":
+                sistemaDAO.GerarRelatorioCSV();
+                break;
+            case "5":
+                isActive = false;
+                Console.WriteLine("Encerrando o programa...");
                 break;
             default:
-                Console.WriteLine("Tipo de cliente inválido. Tente novamente.");
-                goto tipo_cliente;
+                Console.WriteLine("Opção inválida. Tente novamente.");
+                break;
         }
-            break;
-        case "2":
-            Console.Write("Digite o tipo de Cliente para registrar a venda (f/j): ");
-            string tipoCliente = Console.ReadLine()!.Trim().ToLower();
-            Console.Write("Digite o ID: ");
-            int id = int.Parse(Console.ReadLine()!);
-            Console.WriteLine("Digite o valor da compra: ");
-            decimal valor_compra = Convert.ToDecimal(Console.ReadLine());
-            if (tipoCliente == "f")
-            {
-                var clientePf = sistemaDAO.BuscarClientePf(id);
-                clientePf.Pagar_imposto(valor_compra);
-                sistemaDAO.RegistrarVendaPf(clientePf);
-            }
-            else if (tipoCliente == "j")
-            {
-                var clientePj = sistemaDAO.BuscarClientePj(id);
-                clientePj.Pagar_imposto(valor_compra);
-                sistemaDAO.RegistrarVendaPj(clientePj);
-            }
-            else
-            {
-                Console.WriteLine("Tipo de cliente inválido. Tente novamente.");
-                goto case "2";
-            }
-            break;
-        case "3":
-            sistemaDAO.MostrarVendas();
-            break;
-        case "4":
-            sistemaDAO.GerarRelatorioCSV();
-            break;
-        case "5":
-            isActive = false;
-            Console.WriteLine("Encerrando o programa...");
-            break;
-        default:
-            Console.WriteLine("Opção inválida. Tente novamente.");
-            break;
+    } catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Tente novamente. {ex}");
     }
     Console.WriteLine("Pressione qualquer tecla para continuar...");
     Console.ReadKey();
